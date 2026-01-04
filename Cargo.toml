@@ -1,6 +1,6 @@
 [package]
 name = "embeddenator-io"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 authors = ["Tyler Zervas <tz-dev@vectorweight.com>"]
 description = "Envelope format and serialization for Embeddenator"
@@ -11,9 +11,13 @@ categories = ["data-structures", "encoding"]
 
 [features]
 default = []
+compression-zstd = ["dep:zstd"]
+compression-lz4 = ["dep:lz4_flex"]
+full-compression = ["compression-zstd", "compression-lz4"]
 
 [dependencies]
-# Minimal - envelope.rs only uses std::io
+zstd = { version = "0.13", optional = true }
+lz4_flex = { version = "0.11", optional = true }
 
 [dev-dependencies]
 proptest = "1.0"
