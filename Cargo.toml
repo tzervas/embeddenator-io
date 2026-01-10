@@ -11,9 +11,13 @@ categories = ["data-structures", "encoding"]
 
 [features]
 default = []
+compression-zstd = ["zstd"]
+compression-lz4 = ["lz4_flex"]
 
 [dependencies]
-# Minimal - envelope.rs only uses std::io
+# Compression libraries (optional)
+zstd = { version = "0.13", optional = true }
+lz4_flex = { version = "0.11", optional = true }
 
 [dev-dependencies]
 proptest = "1.0"
