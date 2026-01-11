@@ -9,8 +9,14 @@ pub use io::*;
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn component_loads() {
-        assert!(true);
+        // Verify core types are accessible
+        let _ = PayloadKind::EngramBincode;
+        let _ = CompressionCodec::None;
+        let opts = BinaryWriteOptions::default();
+        assert_eq!(opts.codec, CompressionCodec::None);
     }
 }
