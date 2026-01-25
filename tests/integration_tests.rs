@@ -25,7 +25,7 @@ impl SampleData {
         SampleData {
             id: 12345,
             name: "test_data".to_string(),
-            values: vec![1.0, 2.5, 3.14159, 4.0, 5.5],
+            values: vec![1.0, 2.5, std::f64::consts::PI, 4.0, 5.5],
             metadata,
         }
     }
