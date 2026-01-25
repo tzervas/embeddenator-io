@@ -240,7 +240,7 @@ pub mod async_serialize {
         path: P,
     ) -> io::Result<T> {
         let bytes = tokio::fs::read(path).await?;
-        let json = String::from_utf8(bytes).map_err(|e| io::Error::other(e))?;
+        let json = String::from_utf8(bytes).map_err(io::Error::other)?;
         super::from_json(&json)
     }
 
