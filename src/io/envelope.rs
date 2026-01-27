@@ -126,7 +126,7 @@ fn compress_zstd(_raw: &[u8], _level: Option<i32>) -> io::Result<Vec<u8>> {
     {
         use std::io::Cursor;
         let lvl = _level.unwrap_or(0);
-        return zstd::stream::encode_all(Cursor::new(_raw), lvl).map_err(io::Error::other);
+        zstd::stream::encode_all(Cursor::new(_raw), lvl).map_err(io::Error::other)
     }
 
     #[cfg(not(feature = "compression-zstd"))]
@@ -141,7 +141,7 @@ fn decompress_zstd(_payload: &[u8]) -> io::Result<Vec<u8>> {
     #[cfg(feature = "compression-zstd")]
     {
         use std::io::Cursor;
-        return zstd::stream::decode_all(Cursor::new(_payload)).map_err(io::Error::other);
+        zstd::stream::decode_all(Cursor::new(_payload)).map_err(io::Error::other)
     }
 
     #[cfg(not(feature = "compression-zstd"))]
@@ -155,7 +155,7 @@ fn decompress_zstd(_payload: &[u8]) -> io::Result<Vec<u8>> {
 fn compress_lz4(_raw: &[u8]) -> io::Result<Vec<u8>> {
     #[cfg(feature = "compression-lz4")]
     {
-        return Ok(lz4_flex::compress_prepend_size(_raw));
+        Ok(lz4_flex::compress_prepend_size(_raw))
     }
 
     #[cfg(not(feature = "compression-lz4"))]
@@ -169,7 +169,7 @@ fn compress_lz4(_raw: &[u8]) -> io::Result<Vec<u8>> {
 fn decompress_lz4(_payload: &[u8]) -> io::Result<Vec<u8>> {
     #[cfg(feature = "compression-lz4")]
     {
-        return lz4_flex::decompress_size_prepended(_payload).map_err(io::Error::other);
+        lz4_flex::decompress_size_prepended(_payload).map_err(io::Error::other)
     }
 
     #[cfg(not(feature = "compression-lz4"))]
