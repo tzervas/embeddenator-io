@@ -590,7 +590,7 @@ mod tests {
         .unwrap();
 
         // Verify compression happened
-        assert!(compressed.len() < data.len() || compressed.len() > 0);
+        assert!(compressed.len() < data.len() || !compressed.is_empty());
 
         // Decompress
         let compressed_reader = Cursor::new(compressed);
