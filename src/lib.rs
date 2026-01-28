@@ -63,6 +63,10 @@ pub use serialize::{
     to_json_pretty, write_bincode_file, write_json_file,
 };
 pub use stream::{stream_read_file, stream_write_file, StreamReader, StreamWriter};
+pub use stream_compress::{
+    compress_file, decompress_file, stream_compress, stream_decompress, CompressionLevel,
+    StreamCompressor, StreamDecompressor,
+};
 
 #[cfg(test)]
 mod tests {
