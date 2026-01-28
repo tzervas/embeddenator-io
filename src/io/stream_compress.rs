@@ -156,22 +156,28 @@ impl<W: Write> StreamCompressor<W> {
     pub fn with_codec(
         writer: W,
         codec: CompressionCodec,
-        _level: CompressionLevel,
+        level: CompressionLevel,
     ) -> io::Result<Self> {
         match codec {
             CompressionCodec::None => Ok(Self::none(writer)),
             #[cfg(feature = "compression-zstd")]
             CompressionCodec::Zstd => Self::zstd(writer, level),
             #[cfg(not(feature = "compression-zstd"))]
-            CompressionCodec::Zstd => Err(io::Error::other(
-                "zstd streaming compression requires feature `compression-zstd`",
-            )),
+            CompressionCodec::Zstd => {
+                let _ = level; // Suppress unused variable warning
+                Err(io::Error::other(
+                    "zstd streaming compression requires feature `compression-zstd`",
+                ))
+            }
             #[cfg(feature = "compression-lz4")]
             CompressionCodec::Lz4 => Self::lz4(writer, level),
             #[cfg(not(feature = "compression-lz4"))]
-            CompressionCodec::Lz4 => Err(io::Error::other(
-                "lz4 streaming compression requires feature `compression-lz4`",
-            )),
+            CompressionCodec::Lz4 => {
+                let _ = level; // Suppress unused variable warning
+                Err(io::Error::other(
+                    "lz4 streaming compression requires feature `compression-lz4`",
+                ))
+            }
         }
     }
 
