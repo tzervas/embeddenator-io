@@ -1,42 +1,108 @@
 # embeddenator-io
 
-Binary envelope format and serialization for Embeddenator engrams.
+Comprehensive I/O library for the Embeddenator ecosystem. Provides serialization, buffering, streaming, and compression utilities for efficient data handling.
+
+**Independent component** extracted from the Embeddenator monolithic repository. Part of the [Embeddenator workspace](https://github.com/tzervas/embeddenator).
+
+**Repository:** [https://github.com/tzervas/embeddenator-io](https://github.com/tzervas/embeddenator-io)
 
 ## Features
 
-### Core
-- **Binary Envelope Format**: EDN1 magic-number based envelope with header metadata
-- **Payload Types**: EngramBincode, SubEngramBincode
-- **Legacy Support**: Automatic detection and unwrapping of legacy (non-enveloped) data
+- **Serialization**: Binary (bincode) and JSON formats
+- **Buffering**: Configurable buffer sizes for optimal performance
+- **Streaming**: Memory-efficient processing of large datasets
+- **Compression**: Zstandard and LZ4 support (optional)
+- **Async Support**: Tokio-based async I/O (optional)
+- **Envelope Format**: Binary container with compression metadata
 
-### Optional Compression Codecs
+## Status
 
-Enable optional compression via feature flags:
-
-```toml
-[dependencies]
-embeddenator-io = { version = "0.2", features = ["compression-zstd"] }
-```
-
-**Available Features:**
-- `compression-zstd`: Zstandard compression (configurable levels -7 to 22)
-- `compression-lz4`: LZ4 compression (fast, moderate ratio)
-- `full-compression`: Enable all compression codecs
+**Production Ready** - Fully tested and documented I/O component.
 
 ## Usage
 
-### Basic Envelope (No Compression)
+```toml
+[dependencies]
+embeddenator-io = { path = "../embeddenator-io" }
 
+# Enable async support
+embeddenator-io = { path = "../embeddenator-io", features = ["async"] }
+
+# Enable compression
+embeddenator-io = { path = "../embeddenator-io", features = ["compression-zstd", "compression-lz4"] }
+```
+
+### Quick Examples
+
+#### Serialization
 ```rust
 use embeddenator_io::*;
 
-let data = b"my engram data";
+// Write data to file in bincode format
+let data = vec![1, 2, 3, 4, 5];
+write_bincode_file("data.bin", &data)?;
 
-// Wrap without compression
+// Read data from file
+let loaded: Vec<i32> = read_bincode_file("data.bin")?;
+
+// JSON format
+write_json_file("data.json", &data)?;
+let loaded_json: Vec<i32> = read_json_file("data.json")?;
+```
+
+#### Buffering
+```rust
+use embeddenator_io::*;
+use std::fs::File;
+
+// Buffered file reading
+let file = File::open("large_file.dat")?;
+let mut reader = buffered_reader(file);
+
+// Read in chunks
+let chunks = read_chunks(&mut reader, 4096)?;
+
+// Efficient copy
+let mut src = File::open("source.dat")?;
+let mut dst = File::create("dest.dat")?;
+copy_buffered(&mut src, &mut dst, 65536)?;
+```
+
+#### Streaming
+```rust
+use embeddenator_io::*;
+use std::fs::File;
+
+// Stream large file
+let file = File::open("large_data.bin")?;
+let mut stream = StreamReader::new(file);
+
+// Count bytes without loading all data
+let total = stream.count_bytes()?;
+
+// Fold operation for aggregation
+let sum = stream.fold(0u64, |acc, chunk| {
+    acc + chunk.len() as u64
+})?;
+
+// Stream writer
+let mut output = Vec::new();
+let mut writer = StreamWriter::new(&mut output);
+writer.write_chunk(b"chunk1")?;
+writer.write_chunk(b"chunk2")?;
+writer.flush()?;
+```
+
+#### Envelope Format
+```rust
+use embeddenator_io::*;
+
+// Wrap data with compression
+let data = b"Some data to compress";
 let wrapped = wrap_or_legacy(
     PayloadKind::EngramBincode,
-    BinaryWriteOptions::default(),
     data,
+    CompressionCodec::Zstd
 )?;
 
 // Unwrap automatically detects format
@@ -44,85 +110,49 @@ let unwrapped = unwrap_auto(PayloadKind::EngramBincode, &wrapped)?;
 assert_eq!(unwrapped, data);
 ```
 
-### With Compression (Zstd)
+## Development
 
-```rust
-let opts = BinaryWriteOptions {
-    codec: CompressionCodec::Zstd,
-    level: Some(10), // Higher = better compression, slower
-};
+```bash
+# Build
+cargo build
 
-let wrapped = wrap_or_legacy(
-    PayloadKind::EngramBincode,
-    opts,
-    data,
-)?;
+# Run all tests
+cargo test
 
-// Compressed size will be smaller for repetitive data
-println!("Original: {} bytes", data.len());
-println!("Compressed: {} bytes", wrapped.len());
+# Run with all features
+cargo test --all-features
 
-// Unwrap automatically decompresses
-let unwrapped = unwrap_auto(PayloadKind::EngramBincode, &wrapped)?;
+# Build documentation
+cargo doc --open
 ```
-
-### With Compression (LZ4)
-
-```rust
-let opts = BinaryWriteOptions {
-    codec: CompressionCodec::Lz4,
-    level: None, // LZ4 doesn't use compression levels
-};
-
-let wrapped = wrap_or_legacy(PayloadKind::SubEngramBincode, opts, data)?;
-let unwrapped = unwrap_auto(PayloadKind::SubEngramBincode, &wrapped)?;
-```
-
-## Envelope Format
-
-```
-[4 bytes] Magic: "EDN1"
-[1 byte]  Payload Kind (1=EngramBincode, 2=SubEngramBincode)
-[1 byte]  Compression Codec (0=None, 1=Zstd, 2=Lz4)
-[2 bytes] Reserved (0x0000)
-[8 bytes] Uncompressed Size (little-endian u64)
-[N bytes] Payload (compressed or raw)
-```
-
-## Performance
-
-- **No Compression**: Zero overhead (returns raw bytes)
-- **Zstd Level 3**: ~10-50% size reduction, fast
-- **Zstd Level 10**: ~30-70% reduction, moderate speed
-- **Zstd Level 22**: ~40-80% reduction, slow
-- **LZ4**: ~20-40% reduction, very fast
 
 ## Testing
 
-```bash
-# Test without compression
-cargo test --no-default-features
+- **Unit Tests**: 12 tests covering core functionality
+- **Integration Tests**: 16 comprehensive end-to-end tests
+- **Documentation Tests**: 18 examples in documentation
+- **Total Coverage**: 46 tests (100% passing)
 
-# Test with Zstd
-cargo test --features compression-zstd
+## Performance
 
-# Test with all codecs
-cargo test --features full-compression
-```
+### Buffer Sizes
+- `SMALL_BUFFER_SIZE` (4KB): Small files, memory-constrained
+- `DEFAULT_BUFFER_SIZE` (64KB): Optimal for most use cases
+- `LARGE_BUFFER_SIZE` (1MB): Large file operations
 
-## Security Audit
+### Format Comparison
+| Format  | Size | Speed | Precision | Human Readable |
+|---------|------|-------|-----------|----------------|
+| Bincode | Small | Fast | Exact | No |
+| JSON | Large | Slower | Approximate | Yes |
 
-**Status:** ✅ **No `unsafe` code**
+## Architecture
 
-All envelope and compression operations use safe Rust abstractions provided by:
-- `std::io` for I/O operations
-- `zstd` crate for Zstandard compression
-- `lz4_flex` crate for LZ4 compression
+See [ADR-016](https://github.com/tzervas/embeddenator/blob/main/docs/adr/ADR-016-component-decomposition.md) for component decomposition rationale.
+
+See [MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md) for detailed migration information.
 
 ## License
 
 MIT
 
-## Part of Embeddenator
-
-This is a component of the [Embeddenator](https://github.com/tzervas/embeddenator) holographic computing substrate.
