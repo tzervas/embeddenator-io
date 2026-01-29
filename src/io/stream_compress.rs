@@ -53,6 +53,7 @@ pub enum CompressionLevel {
 
 impl CompressionLevel {
     /// Convert to zstd compression level
+    #[cfg(feature = "compression-zstd")]
     fn to_zstd_level(self) -> i32 {
         match self {
             CompressionLevel::Fast => 1,
@@ -677,12 +678,16 @@ mod tests {
     }
 
     #[test]
-    fn test_compression_level_conversion() {
+    #[cfg(feature = "compression-zstd")]
+    fn test_compression_level_zstd_conversion() {
         assert_eq!(CompressionLevel::Fast.to_zstd_level(), 1);
         assert_eq!(CompressionLevel::Default.to_zstd_level(), 3);
         assert_eq!(CompressionLevel::Best.to_zstd_level(), 19);
         assert_eq!(CompressionLevel::Custom(10).to_zstd_level(), 10);
+    }
 
+    #[test]
+    fn test_compression_level_lz4_conversion() {
         assert_eq!(CompressionLevel::Fast.to_lz4_level(), 1);
         assert_eq!(CompressionLevel::Default.to_lz4_level(), 4);
         assert_eq!(CompressionLevel::Best.to_lz4_level(), 9);
